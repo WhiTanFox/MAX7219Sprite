@@ -1,0 +1,33 @@
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+RenderTarget				KEYWORD1	RenderTarget
+DisplayTarget				KEYWORD1	DisplayTarget
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+begin				KEYWORD2
+drawLerp16			KEYWORD2
+drawLerp			KEYWORD2
+drawEye				KEYWORD2
+drawBlank			KEYWORD2
+xorMatrix			KEYWORD2
+orMatrix			KEYWORD2
+andMatrix			KEYWORD2
+drawInvert			KEYWORD2
+drawOffset			KEYWORD2
+drawOffsetWrap		KEYWORD2
+drawSprite			KEYWORD2
+display				KEYWORD2
+setupDisplayTarget	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+#FIRMATA_MAJOR_VERSION	LITERAL1
+#FIRMATA_MINOR_VERSION	LITERAL1
+#FIRMATA_BUGFIX_VERSION	LITERAL1
