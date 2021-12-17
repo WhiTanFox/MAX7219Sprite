@@ -339,6 +339,16 @@ class RenderTarget {
       }
     }
   }
+
+  // Experimental flip the sprite?
+  void drawSpriteFlipped(int index, uint8_t * src, int count = 1) {
+	uint8_t * target = buffer;
+    for (int i = 0; i < 8; ++i) { // For each row
+      for (int j = 0; j < count; ++j) { // For each matrix...
+        target[(index + j)*8 + i] = src[(j)*8 + 7 - i];
+      }
+    }
+  }
   
 };
 

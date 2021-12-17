@@ -23,6 +23,7 @@ drawOffsetWrap		KEYWORD2
 drawSprite			KEYWORD2
 display				KEYWORD2
 setupDisplayTarget	KEYWORD2
+drawSpriteFlipped   KEYWORD2
 
 #######################################
 # Constants (LITERAL1)
