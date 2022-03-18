@@ -392,9 +392,9 @@ public:
       for (int j = 0; j < nMatrices; ++j) {
 		  
 		char neq = (output_buffer[j*8 + i] != buffer[j*8 + i]);
-		if (neq) {
-			Serial.println("Buffer delta!");
-		}
+		//if (neq) {
+		//	Serial.println("Buffer delta!");
+		//}
 		data_dirty |= neq;
 		output_buffer[j*8 + i] = buffer[j*8 + i];
 	  }
