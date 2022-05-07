@@ -1,279 +1,11 @@
 #include <SPI.h>
 #include "MAX7219Sprite.h"
-
-/* Draw a protogen face on the attached 14 panels of LED matrices.
- *
- *
- *
- */
-
-const uint8_t startup[8] = {
-  0xAA,
-  0x55,
-  0xAA,
-  0x55,
-  0xAA,
-  0x55,
-  0xAA,
-  0x55,
-};
-
-const uint8_t eyeL[16] = {
-  0b00000111,
-  0b00011000,
-  0b00100000,
-  0b00100000,
-  0b00100000,
-  0b00010000,
-  0b00010000,
-  0b00001111,
-  
-  0b11111100,
-  0b00000010,
-  0b00000010,
-  0b00000010,
-  0b00000100,
-  0b00000100,
-  0b01111000,
-  0b10000000,
-};
-
-const uint8_t blinkL[16] = {
-  0b00000111,
-  0b00011111,
-  0b00111111,
-  0b00111111,
-  0b00111111,
-  0b00011111,
-  0b00011111,
-  0b00001111,
-
-  0b11111100,
-  0b11111010,
-  0b11111010,
-  0b11111010,
-  0b11110100,
-  0b11110100,
-  0b11111000,
-  0b10000000,
-};
-
-const uint8_t reverse(uint8_t b) {
-   b = (b & 0xF0) >> 4 | (b & 0x0F) << 4;
-   b = (b & 0xCC) >> 2 | (b & 0x33) << 2;
-   b = (b & 0xAA) >> 1 | (b & 0x55) << 1;
-   return b;
-}
-
-const uint8_t blinkR[16] = {
-  reverse(blinkL[8]),
-  reverse(blinkL[9]),
-  reverse(blinkL[10]),
-  reverse(blinkL[11]),
-  reverse(blinkL[12]),
-  reverse(blinkL[13]),
-  reverse(blinkL[14]),
-  reverse(blinkL[15]),
-  
-  reverse(blinkL[0]),
-  reverse(blinkL[1]),
-  reverse(blinkL[2]),
-  reverse(blinkL[3]),
-  reverse(blinkL[4]),
-  reverse(blinkL[5]),
-  reverse(blinkL[6]),
-  reverse(blinkL[7]),
-};
-
-const uint8_t eyeR[16] = {
-  reverse(eyeL[8]),
-  reverse(eyeL[9]),
-  reverse(eyeL[10]),
-  reverse(eyeL[11]),
-  reverse(eyeL[12]),
-  reverse(eyeL[13]),
-  reverse(eyeL[14]),
-  reverse(eyeL[15]),
-  
-  reverse(eyeL[0]),
-  reverse(eyeL[1]),
-  reverse(eyeL[2]),
-  reverse(eyeL[3]),
-  reverse(eyeL[4]),
-  reverse(eyeL[5]),
-  reverse(eyeL[6]),
-  reverse(eyeL[7]),
-};
-
-const uint16_t pupilL[2] = {
-  0b0000000110000000,
-  0b0000000110000000,
-};
-
-const uint16_t pupilR[2] = {
-  0b0000000110000000,
-  0b0000000110000000,
-};
-
-
-const uint8_t eyeSquintL[16] = {
-  
-  0b00000000,
-  0b00000000,
-  0b00000001,
-  0b00000111,
-  0b00011111,
-  0b00111110,
-  0b00111111,
-  0b00001111,
-
-  0b00011000,
-  0b01111000,
-  0b11110000,
-  0b11000000,
-  0b00000000,
-  0b00000000,
-  0b10000000,
-  0b11100000,
-};
-
-const uint8_t eyeSquintR[16] = {
-  reverse(eyeSquintL[8]),
-  reverse(eyeSquintL[9]),
-  reverse(eyeSquintL[10]),
-  reverse(eyeSquintL[11]),
-  reverse(eyeSquintL[12]),
-  reverse(eyeSquintL[13]),
-  reverse(eyeSquintL[14]),
-  reverse(eyeSquintL[15]),
-  
-  reverse(eyeSquintL[0]),
-  reverse(eyeSquintL[1]),
-  reverse(eyeSquintL[2]),
-  reverse(eyeSquintL[3]),
-  reverse(eyeSquintL[4]),
-  reverse(eyeSquintL[5]),
-  reverse(eyeSquintL[6]),
-  reverse(eyeSquintL[7]),
-};
-
-const uint8_t mouthL[32] = {
-  0b00000000,
-  0b00000000,
-  0b00000000,
-  0b00000111,
-  0b00011111,
-  0b01111000,
-  0b11100000,
-  0b10000000,
-
-  0b00000000,
-  0b00000000,
-  0b00000000,
-  0b11000000,
-  0b11110000,
-  0b00111100,
-  0b00001111,
-  0b00000011,
-
-  0b00000000,
-  0b00000000,
-  0b00000000,
-  0b00000000,
-  0b00000111,
-  0b00011111,
-  0b01111000,
-  0b11100000,
-
-  0b00000100,
-  0b00011110,
-  0b01111011,
-  0b11100011,
-  0b11111111,
-  0b00000000,
-  0b00000000,
-  0b00000000,
-};
-
-const uint8_t mouthR[32] = {
-  reverse(mouthL[24]),
-  reverse(mouthL[25]),
-  reverse(mouthL[26]),
-  reverse(mouthL[27]),
-  reverse(mouthL[28]),
-  reverse(mouthL[29]),
-  reverse(mouthL[30]),
-  reverse(mouthL[31]),
-
-  reverse(mouthL[16]),
-  reverse(mouthL[17]),
-  reverse(mouthL[18]),
-  reverse(mouthL[19]),
-  reverse(mouthL[20]),
-  reverse(mouthL[21]),
-  reverse(mouthL[22]),
-  reverse(mouthL[23]),
-  
-  reverse(mouthL[8]),
-  reverse(mouthL[9]),
-  reverse(mouthL[10]),
-  reverse(mouthL[11]),
-  reverse(mouthL[12]),
-  reverse(mouthL[13]),
-  reverse(mouthL[14]),
-  reverse(mouthL[15]),
-  
-  reverse(mouthL[0]),
-  reverse(mouthL[1]),
-  reverse(mouthL[2]),
-  reverse(mouthL[3]),
-  reverse(mouthL[4]),
-  reverse(mouthL[5]),
-  reverse(mouthL[6]),
-  reverse(mouthL[7]),
-};
-
-const uint8_t snoot[16] = {
-  0b00000011,
-  0b00000110,
-  0b00001100,
-  0b00011000,
-  0b00110001,
-  0b01110011,
-  0b00111110,
-  0b00011000,
-  
-  0b11000000,
-  0b01100000,
-  0b00110000,
-  0b00011000,
-  0b10001100,
-  0b11001110,
-  0b01111100,
-  0b00011000,
-  
-};
-
-
-int8_t xs[20] = {
-  -1, -1, -1, -1, -2,
-  -3, -2, -1,  0, 1,
-   1,  1,  0,  0, -1,
-   -1, -1, -1, -1, -1,
-};
-
-int8_t ys[20] = {
-   0, -1, -1, -1,  0,
-   0,  0,  0,  0,  0,
-   1,1, 1, 1, 1,
-  1, 1, 1, -0, -0,
-};
-
+#include "SpriteData.h"
 
 // Initialize the main display matrix
-// arg0 is the number of 8x8 segments described in the frame buffer.
+// arg0 is the number of 8x8 segments described in the flame buffer.
 // arg1 is the CS pin in use for our matrix.
-splerp::DisplayTarget matrix(14, 3);
+splerp::DisplayTarget matrix(14, 8);
 
 // Create some frame buffers to use as intermediate rendering targets.
 // Since this is going to be used for the eye animation, we only need
@@ -286,50 +18,171 @@ splerp::RenderTarget mouthBufferR(4);
 
 splerp::RenderTarget snootBuffer(2);
 
+const int T_interpolate = 80;
+
+bool IMUavailable = true;
+
 void setup() {
   Serial.begin(115200);
-  // We only need to setup the display target once, and only for the output matrix itself
-  matrix.setupDisplayTarget(0x07);
+  //setupFrequencySelector();
 
+  // We only need to setup the display target once, and only for the output matrix itself
+  matrix.setupDisplayTarget(0x02);
+  
+  // Fill all of our output buffers with a crosshatch pattern:
   for (int i = 0; i < 2; ++i) {
-    eyeBufferL.drawSprite(i,startup,1);
-    eyeBufferR.drawSprite(i,startup,1);
+    eyeBufferL.drawSprite(i, startup, 1);
+    eyeBufferR.drawSprite(i, startup, 1);
   }
   for (int i = 0; i < 4; ++i) {
-    mouthBufferL.drawSprite(i,startup,1);
-    mouthBufferR.drawSprite(i,startup,1);
+    mouthBufferL.drawSprite(i, startup, 1);
+    mouthBufferR.drawSprite(i, startup, 1);
   }
+  snootBuffer.drawSprite(0, startup, 1);
+  snootBuffer.drawSprite(1, startup, 1);
 
-  matrix.drawSprite(0,mouthBufferR.buffer,4);
-  matrix.drawSprite(4,eyeBufferR.buffer,2);
-  matrix.drawSprite(6,snootBuffer.buffer,2);
-  matrix.drawSprite(8,eyeBufferL.buffer,2);
-  matrix.drawSprite(10,mouthBufferL.buffer,4);
+  // Copy all of our buffers to our output and throw it on the displays!
+  matrix.drawSprite(0, mouthBufferR.buffer, 4);
+  matrix.drawSprite(4, eyeBufferR.buffer, 2);
+  matrix.drawSprite(6, snootBuffer.buffer, 2);
+  matrix.drawSprite(8, eyeBufferL.buffer, 2);
+  matrix.drawSprite(10, mouthBufferL.buffer, 4);
   matrix.display();
-  delay(500);
+
+  delay(1000);
 }
 
+#define SMILING 0 
+#define HEART_EYES 1
+#define SHOCK 2
+#define ERROR404 3
+#define BOOPED 4
+#define N_Options 5
 
+// State tracking for things
+long int stateChangeTime = 0;
+long int stateUpdateTime = 0;
+int currentState = SMILING;
+
+long int lastManual = 0;
+
+splerp::RenderTarget eyeBufferL_hold(2);
+splerp::RenderTarget eyeBufferR_hold(2);
+
+splerp::RenderTarget eyeFutureL(2);
+splerp::RenderTarget eyeFutureR(2);
+
+void drawSmilingEyes(splerp::RenderTarget * leftEye, splerp::RenderTarget * rightEye) {
+  leftEye -> drawSprite(0, eyeL, 2);
+  rightEye -> drawSprite(0, eyeR, 2);
+}
+
+// Latch our current eye output in the hold buffer.
+void setNewState(int state) {
+  stateUpdateTime = millis();
+  if (currentState == state) return;
+  stateChangeTime = millis();
+  currentState = state;
+  eyeBufferL_hold.drawSprite(0, eyeBufferL.buffer, 2);
+  eyeBufferR_hold.drawSprite(0, eyeBufferR.buffer, 2);
+}
+
+void drawInterpolatedEyes(splerp::RenderTarget * target, uint8_t * eventual, uint8_t * previous) {
+  long int t = (millis() - stateChangeTime)/(T_interpolate / 8);
+  if (t < 8) {
+    //eyeBufferL.drawLerp16(0, previous, eventual, t, 0b00111100, 0b11111100);
+    target -> drawLerp16(0, previous, eventual, t, 0xFF, 0xFF);
+  } else {
+    target -> drawSprite(0, eventual, 2);
+  }
+}
+
+int lastBoopState = 0;
+long int startofboop = 0;
+void getBoop() {
+  bool in = !digitalRead(A0);
+  if (in && (!lastBoopState || (millis() - startofboop) < 5000)) {
+    if (startofboop < 0) startofboop = millis();
+    setNewState(BOOPED);
+  }
+  if (!in) {
+    startofboop = -5000;
+  }
+  lastBoopState = in;
+}
 
 void loop() {
-  eyeBufferL.drawEye(0, eyeL, pupilL, -1, 0, blinkL, 2);
-  eyeBufferR.drawEye(0, eyeR, pupilR, 1, 0, blinkR, 2);
-  
-  mouthBufferL.drawSprite(0,mouthL,4);
-  mouthBufferR.drawSprite(0,mouthR,4);
-
-  snootBuffer.drawSprite(0,snoot,2);
-  
-
-  matrix.drawSprite(0,mouthBufferR.buffer,4);
-  matrix.drawSprite(4,eyeBufferR.buffer,2);
-  matrix.drawSprite(6,snootBuffer.buffer,2);
-  matrix.drawSprite(8,eyeBufferL.buffer,2);
-  matrix.drawSprite(10,mouthBufferL.buffer,4);
-  
   long int startTime = micros();
+  bool demoMode = false;
+  
+  if (Serial.available()) {
+    char a = Serial.read();
+    int ind = a - '0';
+    if (ind >= 0 && ind < N_Options) {
+      setNewState(ind);
+      Serial.print("Triggered ");
+      Serial.print(ind);
+      Serial.println();
+      lastManual = millis();
+    }
+  }
+
+
+  // Demonstrate things!
+  if (millis() - lastManual > 10000) {
+    demoMode = true;
+    if (millis() - stateUpdateTime > 1000) {
+      setNewState((millis() / 1000) % N_Options);
+    }
+  }
+
+  getBoop();
+  
+  long int emoteTimer = millis() - stateUpdateTime;
+  
+  if (currentState == SMILING) {
+    drawSmilingEyes(&eyeFutureL, &eyeFutureR);
+  } else if (currentState == HEART_EYES) {
+    int t = millis();
+    eyeFutureL.drawOffset(0, heartEye, 2, (t / 50) % 2, 0);
+    eyeFutureR.drawOffset(0, heartEye, 2, 1-(t / 50) % 2, 0);
+
+    if (emoteTimer > 1000 && !demoMode) setNewState(SMILING);
+    
+  } else if (currentState == SHOCK) {
+    eyeFutureL.drawOffset(0, boringEye, 2, -1, 0);
+    eyeFutureR.drawSprite(0, boringEye, 2);
+    Serial.println("Drawing shocked eyes to buffer...");
+    
+    if (emoteTimer > 100 && !demoMode) setNewState(SMILING);
+    
+  } else if (currentState == ERROR404) {
+    eyeFutureL.drawSprite(0, errorCode, 2);
+    eyeFutureR.drawSprite(0, errorCode, 2);
+    Serial.println("Drawing ERROR404 to buffer...");
+    
+    if (emoteTimer > 1000 && !demoMode) setNewState(SMILING);
+  } else if (currentState == BOOPED) {
+    eyeFutureL.drawSprite(0, boopEyeR, 2);
+    eyeFutureR.drawSprite(0, boopEyeL, 2);
+
+    int runningTime = millis() - stateChangeTime;
+    
+    if (emoteTimer > 100 && !demoMode) setNewState(SMILING);
+  }
+  
+  drawInterpolatedEyes(&eyeBufferL, eyeFutureL.buffer, eyeBufferL_hold.buffer);
+  drawInterpolatedEyes(&eyeBufferR, eyeFutureR.buffer, eyeBufferR_hold.buffer);
+  mouthBufferL.drawSprite(0, mouthL, 4);
+  mouthBufferR.drawSprite(0, mouthR, 4);
+  snootBuffer.drawSprite(0, snoot, 2);
+  
+
+  matrix.drawOffset(0, eyeBufferL.buffer, 2, (millis()/500)%2 - 1, 0);
+  matrix.drawOffset(12, eyeBufferR.buffer, 2, -(millis()/500)%2 + 1, 0);
+
+  matrix.drawSprite(2, mouthBufferL.buffer, 4);
+  matrix.drawSprite(6, snootBuffer.buffer, 2);
+  matrix.drawSprite(8, mouthBufferR.buffer, 4);
   matrix.display();
-  long int stopTime = micros();
-  Serial.println(stopTime - startTime);
-  delay(5);
 }
