@@ -48,56 +48,56 @@ class RenderTarget {
    * 
    */
   void drawLerp16(int index, uint8_t * spr1, uint8_t * spr2, int progress, uint8_t LTR, uint8_t RTL) {
-    uint8_t * target = buffer;
-    for (int i = 0; i < 8; ++i) { // Rows -> i = f(x)
-      // Compact our row into a single 16-bit field
-      uint16_t slice1 = spr1[i + 8] | (spr1[i]<<8);
-      uint16_t slice2 = spr2[i + 8] | (spr2[i]<<8);
+	uint8_t * target = buffer;
+	for (int i = 0; i < 8; ++i) { // Rows -> i = f(x)
+	  // Compact our row into a single 16-bit field
+	  uint16_t slice1 = spr1[i + 8] | (spr1[i]<<8);
+	  uint16_t slice2 = spr2[i + 8] | (spr2[i]<<8);
   
-      // Make our blur masks by duplicating our start and end state.
-      uint16_t mask1 = slice1;
-      uint16_t mask2 = slice2;
-      // Either blur from left to right or right to left. Or both.
-      if (LTR & (1 << i)) {
-        // If we're left-to-right, blur the sprite 1 mask to the right
-        for (int i = 0; i < progress; ++i) {
-          mask1 = mask1 | mask1 >> 1;
-        }
-        // and blur the sprite 2 mask to the left
-        for (int i = progress; i < 8; ++i) {
-          mask2 = mask2 | mask2 << 1;
-        }
-      }
-      if (RTL & (1 << i)) {
-        // If we're left-to-right, blur the sprite 1 mask to the left
-        for (int i = 0; i < progress; ++i) {
-          mask1 = mask1 | mask1 << 1;
-        }
-        // and blur the sprite 2 mask to the right
-        for (int i = progress; i < 8; ++i) {
-          mask2 = mask2 | mask2 >> 1;
-        }
-      }
+	  // Make our blur masks by duplicating our start and end state.
+	  uint16_t mask1 = slice1;
+	  uint16_t mask2 = slice2;
+	  // Either blur from left to right or right to left. Or both.
+	  if (LTR & (1 << i)) {
+		// If we're left-to-right, blur the sprite 1 mask to the right
+		for (int i = 0; i < progress; ++i) {
+		  mask1 = mask1 | mask1 >> 1;
+		}
+		// and blur the sprite 2 mask to the left
+		for (int i = progress; i < 8; ++i) {
+		  mask2 = mask2 | mask2 << 1;
+		}
+	  }
+	  if (RTL & (1 << i)) {
+		// If we're left-to-right, blur the sprite 1 mask to the left
+		for (int i = 0; i < progress; ++i) {
+		  mask1 = mask1 | mask1 << 1;
+		}
+		// and blur the sprite 2 mask to the right
+		for (int i = progress; i < 8; ++i) {
+		  mask2 = mask2 | mask2 >> 1;
+		}
+	  }
   
-      // To get our final matrix state for this row...
-      uint16_t blend = 0;
-      // If we're less than 4 of 8, then use sprite 1 or-ed with the bitwise-and of the mask,
-      // Otherwise use sprite 2 .
-      if (progress < 4) {
-        blend = slice1 | (mask1 & mask2);
-      } else {
-        blend = slice2 | (mask1 & mask2);
-      }
+	  // To get our final matrix state for this row...
+	  uint16_t blend = 0;
+	  // If we're less than 4 of 8, then use sprite 1 or-ed with the bitwise-and of the mask,
+	  // Otherwise use sprite 2 .
+	  if (progress < 4) {
+		blend = slice1 | (mask1 & mask2);
+	  } else {
+		blend = slice2 | (mask1 & mask2);
+	  }
   
-      // Enable this for debugging; it'll write the progress as a binary number to the 0th row.
-      /*if (i == 0) {
-        blend = (progress) | (progress << 8);
-      }*/
+	  // Enable this for debugging; it'll write the progress as a binary number to the 0th row.
+	  /*if (i == 0) {
+		blend = (progress) | (progress << 8);
+	  }*/
   
-      // Now, actually throw our bits into our frame buffer:
-      target[(index  )*8 + i] = (blend>>8)&0xff;
-      target[(index+1)*8 + i] = blend&(0xff);
-    }
+	  // Now, actually throw our bits into our frame buffer:
+	  target[(index  )*8 + i] = (blend>>8)&0xff;
+	  target[(index+1)*8 + i] = blend&(0xff);
+	}
   }
   
   /* 
