@@ -152,14 +152,14 @@ void loop() {
   } else if (currentState == SHOCK) {
     eyeFutureL.drawOffset(0, boringEye, 2, -1, 0);
     eyeFutureR.drawSprite(0, boringEye, 2);
-    Serial.println("Drawing shocked eyes to buffer...");
+    //Serial.println("Drawing shocked eyes to buffer...");
     
     if (emoteTimer > 100 && !demoMode) setNewState(SMILING);
     
   } else if (currentState == ERROR404) {
     eyeFutureL.drawSprite(0, errorCode, 2);
     eyeFutureR.drawSprite(0, errorCode, 2);
-    Serial.println("Drawing ERROR404 to buffer...");
+    //Serial.println("Drawing ERROR404 to buffer...");
     
     if (emoteTimer > 1000 && !demoMode) setNewState(SMILING);
   } else if (currentState == BOOPED) {
@@ -185,4 +185,6 @@ void loop() {
   matrix.drawSprite(6, snootBuffer.buffer, 2);
   matrix.drawSprite(8, mouthBufferR.buffer, 4);
   matrix.display();
+
+  Serial.println(micros() - startTime);
 }
