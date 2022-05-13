@@ -47,7 +47,7 @@ class RenderTarget {
    * - set both if you want to.
    * 
    */
-  void drawLerp16(int index, uint8_t * spr1, uint8_t * spr2, int progress, uint8_t LTR, uint8_t RTL) {
+  void drawLerp16(const int index, const uint8_t * spr1, const uint8_t * spr2, const int progress, const uint8_t LTR, const uint8_t RTL) {
 	uint8_t * target = buffer;
 	for (int i = 0; i < 8; ++i) { // Rows -> i = f(x)
 	  // Compact our row into a single 16-bit field
@@ -104,7 +104,7 @@ class RenderTarget {
    *  Interpolate an 8x8 matrix between two sprites.
    *  This is a bit of a mess. Doesn't work well. Decidedly less fun than the 16x8 method.
    */
-  void drawLerp(int index, uint8_t * spr1, uint8_t * spr2, int progress) {
+  void drawLerp(const int index, const uint8_t * spr1, const uint8_t * spr2, const int progress) {
     uint8_t * target = buffer;
     for (int i = 0; i < 8; ++i) { // Rows -> i = f(x)
       uint8_t slice1 = spr1[i];
@@ -138,7 +138,7 @@ class RenderTarget {
   //   -- This matrix only has two rows right now. That was a rather dumb arbitrary decision.
   // *blink is the sprite that will be slid down from the top if blinkdist > 0
   // blinkdist is the distance that the upper eyelid has shifted downwards.
-  void drawEye(int index, uint8_t * dat, uint16_t * pupil, int x, int y, uint8_t * blink, int blinkDist) {
+  void drawEye(const int index, const uint8_t * dat, const uint16_t * pupil, const int x, const int y, const uint8_t * blink, const int blinkDist) {
     uint8_t * target = buffer;
     for (int i = 0; i < 8; ++i) {
       // Unless otherwise true, assume a blank pupil line
@@ -171,7 +171,7 @@ class RenderTarget {
     }
   }
   
-  void drawBlank(int index, int count) {
+  void drawBlank(const int index, const int count) {
     uint8_t * target = buffer;
     
     for (int i = 0; i < 8; ++i) {
@@ -185,7 +185,7 @@ class RenderTarget {
   /*
    * Take the bitwise XOR of the two inputs, and write it to the target
    */
-  void xorMatrix(int index, uint8_t * src1, uint8_t * src2, int count) {
+  void xorMatrix(const int index, const uint8_t * src1, const uint8_t * src2, const int count) {
     uint8_t * target = buffer;
     for (int i = 0; i < 8; ++i) {
       for (int j = 0; j < count; ++j) {
@@ -197,7 +197,7 @@ class RenderTarget {
   /*
    * Take the bitwise OR of the two inputs, and write it to the target
    */
-  void orMatrix(int index, uint8_t * src1, uint8_t * src2, int count) {
+  void orMatrix(const int index, const uint8_t * src1, const uint8_t * src2, const int count) {
     uint8_t * target = buffer;
     for (int i = 0; i < 8; ++i) {
       for (int j = 0; j < count; ++j) {
@@ -209,7 +209,7 @@ class RenderTarget {
   /*
    * Take the bitwise AND of the two inputs, and write it to the target
    */
-  void andMatrix(int index, uint8_t * src1, uint8_t * src2, int count) {
+  void andMatrix(const int index, const uint8_t * src1, const uint8_t * src2, const int count) {
     uint8_t * target = buffer;
     for (int i = 0; i < 8; ++i) {
       for (int j = 0; j < count; ++j) {
@@ -221,7 +221,7 @@ class RenderTarget {
   /*
    * Perform a bitwise inversion of the source matrix and place it at the target.
    */
-  void drawInvert(int index, uint8_t * src1, int count) {
+  void drawInvert(const int index, const uint8_t * src1, const int count) {
     uint8_t * target = buffer;
     for (int i = 0; i < 8; ++i) {
       for (int j = 0; j < count; ++j) {
@@ -233,12 +233,12 @@ class RenderTarget {
   // Copy count arrays of byte from SRC to target at index, offseting the source data by hor pixels along, and ver pixels vertically.
   // Positive hor will offset down the display array, as though index were fractionally increased.
   // Positive ver will offset towards i=7 on the matrix.
-  void drawOffset(int index, uint8_t * src, int count, int hor, int ver) {
+  void drawOffset(const int index, const uint8_t * src, const int count, const int horin, const int ver) {
     uint8_t * target = buffer;
     // This is how many matrices we need to offset everything by.
-    int horizontalMatrixOffset = hor/8;
+    int horizontalMatrixOffset = horin/8;
     // This is where the trouble starts...
-    hor = hor % 8;
+    int hor = horin % 8;
     // Iterate over our target matrix rows, as we do.
     for (int i = 0; i < 8; ++i) {
       // Check if we're out-of-bounds on the vertical offset for this row, and just send blank if we are.
@@ -283,10 +283,10 @@ class RenderTarget {
   // This will wrap graphics along X in the specified matrix count.
   // Positive hor will offset down the display array, as though index were fractionally increased.
   // Positive ver will offset towards i=7 on the matrix.
-  void drawOffsetWrap(int index, uint8_t * src, int count, int hor, int ver) {
+  void drawOffsetWrap(const int index, const uint8_t * src, const int count, const int horin, const int ver) {
     uint8_t * target = buffer;
   
-    hor %= count*8;
+    int hor = horin % (count*8);
     
     // This is how many matrices we need to offset everything by.
     int horizontalMatrixOffset = hor/8;
@@ -329,7 +329,7 @@ class RenderTarget {
   
   // Write a sprite at SRC to TARGET[index]. Copies 'count' 8x8 matrices.
   // Write up the list - index, index+1, index+2....
-  void drawSprite(int index, uint8_t * src, int count = 1) {
+  void drawSprite(const int index, const uint8_t * src, const int count = 1) {
     uint8_t * target = buffer;
     for (int i = 0; i < 8; ++i) {
       for (int j = 0; j < count; ++j) {
@@ -339,7 +339,7 @@ class RenderTarget {
   }
 
   // Experimental flip the sprite?
-  void drawSpriteFlipped(int index, uint8_t * src, int count = 1) {
+  void drawSpriteFlipped(const int index, const uint8_t * src, const int count = 1) {
 	uint8_t * target = buffer;
     for (int i = 0; i < 8; ++i) { // For each row
       for (int j = 0; j < count; ++j) { // For each matrix...
@@ -358,7 +358,7 @@ class DisplayTarget : public RenderTarget {
   uint8_t * output_buffer;
 	
   // Send a byte into the shift register stack with the given address and data byte
-  void TX (uint8_t adr, uint8_t dat) {
+  void TX (const uint8_t adr, const uint8_t dat) {
     SPI.transfer(adr);
     SPI.transfer(dat);
   }
@@ -366,6 +366,7 @@ class DisplayTarget : public RenderTarget {
   // Send a CS-pin pulse to make the 7219's read the data in the shift registers.
   void pulseCS() {
     digitalWrite(CSpin, HIGH);
+	delayMicroseconds(1);
     digitalWrite(CSpin, LOW);
   }
   
@@ -411,7 +412,7 @@ public:
   }
 
   // Set up our chip select lines and prepare our device
-  void setupDisplayTarget(int intensity = 0x04) {
+  void setupDisplayTarget(const int intensity = 0x04) {
     pinMode(CSpin, OUTPUT);
     digitalWrite(CSpin, HIGH);
     SPI.begin();

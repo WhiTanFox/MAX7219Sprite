@@ -184,7 +184,14 @@ void loop() {
   matrix.drawSprite(2, mouthBufferL.buffer, 4);
   matrix.drawSprite(6, snootBuffer.buffer, 2);
   matrix.drawSprite(8, mouthBufferR.buffer, 4);
+  
+  long int t = micros();
   matrix.display();
-
-  Serial.println(micros() - startTime);
+  long int t2 = micros(); 
+  Serial.print(t - startTime);
+  Serial.print(",");
+  Serial.print(t2 - t);
+  Serial.print(",");
+  Serial.print(t2 - startTime);
+  Serial.println();
 }
