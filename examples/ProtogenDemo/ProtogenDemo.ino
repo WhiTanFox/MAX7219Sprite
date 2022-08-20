@@ -187,7 +187,7 @@ void loop() {
   
   long int t = micros();
   matrix.display();
-  long int t2 = micros(); 
+  long int t2 = micros();
   Serial.print(t - startTime);
   Serial.print(",");
   Serial.print(t2 - t);

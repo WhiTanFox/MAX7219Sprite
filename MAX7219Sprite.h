@@ -400,17 +400,58 @@ public:
 		output_buffer[j*8 + i] = buffer[j*8 + i];
 	  }
 	}
+	data_dirty |= 1;
 	if (data_dirty) {
+		SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
 		for (int i = 0; i < 8; i++) {
 		  for (int j = 0; j < nMatrices; ++j) {
 			TX(1 + i, output_buffer[j*8 + i]);
+			//TX(1 + i, buffer[j*8 + i]);
 			//Serial.println(buffer[j*8 + i], BIN);
 		  }
 		  pulseCS();
 		}
+		SPI.endTransaction();
 	}
   }
-
+	
+  void reboot(const int intensity = 0x04) {
+	pinMode(CSpin, OUTPUT);
+    digitalWrite(CSpin, HIGH);
+    SPI.begin();
+    SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+    
+	// Disable shutdown ([0x0C] = 1)
+    for (int i = 0; i < nMatrices; ++i){
+      TX(0x0C, 0x00);
+    }
+    pulseCS();
+    // Disable shutdown ([0x0C] = 1)
+    for (int i = 0; i < nMatrices; ++i){
+      TX(0x0C, 0x01);
+    }
+    pulseCS();
+    
+    // Set decode mode to 0x00, for bitwise driving
+    for (int i = 0; i < nMatrices; ++i){
+      TX(0x09, 0x00);
+    }
+    pulseCS();
+	
+    // Set intensity to something
+    for (int i = 0; i < nMatrices; ++i){
+      TX(0x0A, intensity);
+    }
+    pulseCS();
+	
+    // Maximum scan limit
+    for (int i = 0; i < nMatrices; ++i){
+      TX(0x0B, 0x07);
+    }
+    pulseCS();
+	SPI.endTransaction();
+  }
+	
   // Set up our chip select lines and prepare our device
   void setupDisplayTarget(const int intensity = 0x04) {
     pinMode(CSpin, OUTPUT);
@@ -459,6 +500,7 @@ public:
       TX(0x0B, 0x07);
     }
     pulseCS();
+	SPI.endTransaction();
   }
   
 };
