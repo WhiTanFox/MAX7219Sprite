@@ -355,7 +355,6 @@ class RenderTarget {
 class DisplayTarget : public RenderTarget {
   // Chip-select pin 
   int CSpin;
-  uint8_t * output_buffer;
 	
   // Send a byte into the shift register stack with the given address and data byte
   void TX (const uint8_t adr, const uint8_t dat) {
@@ -377,42 +376,24 @@ public:
     
 	CSpin = ChipSelectPin;
     nMatrices = numberOfMatrices;
-    output_buffer = (uint8_t*)malloc(8*nMatrices);
       //setupDisplayTarget();
   }
   
   // Destructor is important, too!
   ~DisplayTarget() {
-    delete[] output_buffer;
+    
   }
   
   // Send our frame buffer to the matrices.
   void display() {
-	char data_dirty = 0;
+	SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
 	for (int i = 0; i < 8; i++) {
-      for (int j = 0; j < nMatrices; ++j) {
-		  
-		char neq = (output_buffer[j*8 + i] != buffer[j*8 + i]);
-		//if (neq) {
-		//	Serial.println("Buffer delta!");
-		//}
-		data_dirty |= neq;
-		output_buffer[j*8 + i] = buffer[j*8 + i];
+	  for (int j = 0; j < nMatrices; ++j) {
+		TX(1 + i, buffer[j*8 + i]);
 	  }
+	  pulseCS();
 	}
-	data_dirty |= 1;
-	if (data_dirty) {
-		SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
-		for (int i = 0; i < 8; i++) {
-		  for (int j = 0; j < nMatrices; ++j) {
-			TX(1 + i, output_buffer[j*8 + i]);
-			//TX(1 + i, buffer[j*8 + i]);
-			//Serial.println(buffer[j*8 + i], BIN);
-		  }
-		  pulseCS();
-		}
-		SPI.endTransaction();
-	}
+	SPI.endTransaction();
   }
 	
   void reboot(const int intensity = 0x04) {
