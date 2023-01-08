@@ -421,7 +421,7 @@ public:
 	
     // Set intensity to something
     for (int i = 0; i < nMatrices; ++i){
-      TX(0x0A, intensity);
+      TX(0x0F, intensity);
     }
     pulseCS();
 	
