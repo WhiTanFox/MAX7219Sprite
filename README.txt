@@ -2,9 +2,14 @@ MAX7219Sprite.h
 ---------------
 Sprite wrangling for MAX7219-based displays.
 
-Version 0.1
+Version 0.2
 
 By charles H (@CharlesCAN#4335 on Discord)
+
+Note:
+-----
+
+I'll be honest, this documentation is kinda crap - probably just hit me up on Discord.
 
 Common terms:
 -------------
