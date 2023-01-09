@@ -1,16 +1,12 @@
 MAX7219Sprite.h
 ---------------
+
 Sprite wrangling for MAX7219-based displays.
 
-Version 0.2
+Version 1.0
 
-By charles H (@CharlesCAN#4335 on Discord)
+By Charles H (@CharlesCAN#4335 on Discord - reach out if you need any help!)
 
-
-Note:
------
-
-I'll be honest, this documentation is kinda crap - probably just hit me up on Discord.
 
 Hardware:
 ---------
@@ -51,17 +47,22 @@ Note that this will overwrite all pixels (since this has a lower computational c
 However, the frame buffer is not cleared after calling display(), so unless you clear it, the replacement data should
 not show any unexpected changes.
 
+
 Hey, the outputs keep going glitchy?
 ------------------------------------
 
-Sometimes, your MAX7219s will do some weird stuff every once in a while.
+Sometimes, your MAX7219s will do some weird stuff.
 
-This is a horrible solution, but I recommend calling matrix.reboot() every once in a while - say, twice per second.
-You'll need to feed it an intensity value
+Reflow your solder joints, use nicer wire, and inject power from both ends of the array.
+
+However, if you've done what you readily can and are tearing your hair out, there's one dirty solution:
+Call matrix.reboot() every once in a while - say, twice per second.
+You'll need to feed it your intensity value, but that's probably fine.
 
 
 Functions:
 ----------
+
 display()	writes out the framebuffer to the display.
 setup(		configures the PSI peripheral and all of the MAX7219s
 	uint8_t intensity, 		Display brightness
@@ -90,10 +91,11 @@ void drawLerp(		Interpolates between two 8x8 sprites
 	uint8_t * spr2,		output for progress = 8
 	int progress		progress from 0 to 8, inclusive
 )
-void drawEye(		Renders an eye with an eyelid and pupil.
+
+void drawEye(		Renders an eye with an eyelid and pupil. (Don't use this)
 	int index,		render target start position
 	uint8_t * dat,		the eye outline sprite. 16x8
-	uint16_t * pupil,	the special pupil matrix (two 16-bit integers)
+	uint16_t * pupil,	the special pupil matrix (two 16-bit integers).
 	int x,			current pupil x offset
 	int y,			current pupil y offset
 	uint8_t * blink,	the closed-eye sprite. 16x8
@@ -101,7 +103,8 @@ void drawEye(		Renders an eye with an eyelid and pupil.
 )
 
 drawBlank(			Renders blank (black) pixels.
-	int index,		render target start position
+	int index,		render target start position in 8x8 blocks
+	int index,		render target start position in 8x8 blocks
 	int count		number of 8x8's of blank to output
 )
 
@@ -111,12 +114,12 @@ void andMatrix(		Renders the bitwise AND of two sprites
 	int index,		Render target start position
 	uint8_t * src1,	first sprite
 	uint8_t * src2,	second sprite
-	int count		number of 8x8 panels included in the sprites
+	int count		size of the input sprite in 8x8 blocks
 )
-void drawInvert(	Get the bitwise inverse of this sprite
-	int index,		render target start position
+void drawInvert(	Get the bitwise NOT of a sprite
+	int index,		Where in this target to place the sprite
 	uint8_t * src1,	input sprite
-	int count		number of 8x8 panels included in the sprite
+	int count		size of the input sprite in 8x8 blocks
 )
 
 offsetMatrix(		Shift along X and Y the given sprite
