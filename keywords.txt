@@ -2,6 +2,7 @@
 # Datatypes (KEYWORD1)
 #######################################
 
+splerp						KEYWORD1	splerp
 RenderTarget				KEYWORD1	RenderTarget
 DisplayTarget				KEYWORD1	DisplayTarget
 
