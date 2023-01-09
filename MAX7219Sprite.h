@@ -387,6 +387,8 @@ public:
   // Send our frame buffer to the matrices.
   void display() {
 	SPI.beginTransaction(SPISettings(10000000, MSBFIRST, SPI_MODE0));
+
+    // Shove the bits down the line:
 	for (int i = 0; i < 8; i++) {
 	  for (int j = 0; j < nMatrices; ++j) {
 		TX(1 + i, buffer[j*8 + i]);
