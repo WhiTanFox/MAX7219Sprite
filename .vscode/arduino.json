@@ -1,0 +1,6 @@
+{
+    "configuration": "cpu=atmega328old",
+    "board": "arduino:avr:nano",
+    "port": "COM14",
+    "sketch": "examples\\ProtogenDemo\\ProtogenDemo.ino"
+}

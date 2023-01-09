@@ -1,21 +1,37 @@
+// Protogen Head demonstration
+
 #include <SPI.h>
+
+// The library
 #include "MAX7219Sprite.h"
+
+// Our sprite data
 #include "SpriteData.h"
 
-// Initialize the main display matrix
+// ---------------------------------------------------------------------------------------
+// Initialize the main display matrix.
+// For a protogen, we need 14 8x8 chunks
+
 // arg0 is the number of 8x8 segments described in the flame buffer.
-// arg1 is the CS pin in use for our matrix.
+// arg1 is the CS pin in use for our matrix - pin 8
 splerp::DisplayTarget matrix(14, 8);
 
+// ---------------------------------------------------------------------------------------
 // Create some frame buffers to use as intermediate rendering targets.
+// This isn't strictly necessary but we are going to do it here for completion's sake.
+
+
 // Since this is going to be used for the eye animation, we only need
 //  to include two MAX7219's worth of memory.
 splerp::RenderTarget eyeBufferL(2);
 splerp::RenderTarget eyeBufferR(2);
 
+// Create the buffers for our mouth.
+// These aren't really necessary, but if we want to do some weirder things, then they'll be nice to have.
 splerp::RenderTarget mouthBufferL(4);
 splerp::RenderTarget mouthBufferR(4);
 
+// Create a buffer for our snoot
 splerp::RenderTarget snootBuffer(2);
 
 const int T_interpolate = 80;
@@ -24,11 +40,11 @@ bool IMUavailable = true;
 
 void setup() {
   Serial.begin(115200);
-  //setupFrequencySelector();
 
   // We only need to setup the display target once, and only for the output matrix itself
   matrix.setupDisplayTarget(0x02);
   
+  // To show that things are, in fact, working, we're gonna put something in the matrices.
   // Fill all of our output buffers with a crosshatch pattern:
   for (int i = 0; i < 2; ++i) {
     eyeBufferL.drawSprite(i, startup, 1);
@@ -66,12 +82,14 @@ int currentState = SMILING;
 
 long int lastManual = 0;
 
+// It so happens that the fancy interpolation requires some rather elaborate buffering.
 splerp::RenderTarget eyeBufferL_hold(2);
 splerp::RenderTarget eyeBufferR_hold(2);
-
 splerp::RenderTarget eyeFutureL(2);
 splerp::RenderTarget eyeFutureR(2);
 
+
+// Dump smiling eyes into the buffers.
 void drawSmilingEyes(splerp::RenderTarget * leftEye, splerp::RenderTarget * rightEye) {
   leftEye -> drawSprite(0, eyeL, 2);
   rightEye -> drawSprite(0, eyeR, 2);
@@ -87,6 +105,7 @@ void setNewState(int state) {
   eyeBufferR_hold.drawSprite(0, eyeBufferR.buffer, 2);
 }
 
+// Helper function to keep our interpolation timing consistent
 void drawInterpolatedEyes(splerp::RenderTarget * target, uint8_t * eventual, uint8_t * previous) {
   long int t = (millis() - stateChangeTime)/(T_interpolate / 8);
   if (t < 8) {
@@ -115,6 +134,7 @@ void loop() {
   long int startTime = micros();
   bool demoMode = false;
   
+  // Check the serial port for inputs
   if (Serial.available()) {
     char a = Serial.read();
     int ind = a - '0';
@@ -127,19 +147,19 @@ void loop() {
     }
   }
 
-
-  // Demonstrate things!
+  // Continue automatically cycling through features if there haven't been manual updates recently
   if (millis() - lastManual > 10000) {
     demoMode = true;
     if (millis() - stateUpdateTime > 1000) {
       setNewState((millis() / 1000) % N_Options);
     }
   }
-
+	
+  // Update our inputs
   getBoop();
-  
   long int emoteTimer = millis() - stateUpdateTime;
   
+  // State machine to set our eyes
   if (currentState == SMILING) {
     drawSmilingEyes(&eyeFutureL, &eyeFutureR);
   } else if (currentState == HEART_EYES) {
@@ -171,20 +191,25 @@ void loop() {
     if (emoteTimer > 100 && !demoMode) setNewState(SMILING);
   }
   
+  // Run our interpolator, updating the eye buffer
   drawInterpolatedEyes(&eyeBufferL, eyeFutureL.buffer, eyeBufferL_hold.buffer);
   drawInterpolatedEyes(&eyeBufferR, eyeFutureR.buffer, eyeBufferR_hold.buffer);
+  
+  // Update the mouth and snoot buffers (Much simpler than the eyes: Just draw the sprites)
   mouthBufferL.drawSprite(0, mouthL, 4);
   mouthBufferR.drawSprite(0, mouthR, 4);
   snootBuffer.drawSprite(0, snoot, 2);
   
-
+  // Wiggle the eyes around a bit for good measure
   matrix.drawOffset(0, eyeBufferL.buffer, 2, (millis()/500)%2 - 1, 0);
   matrix.drawOffset(12, eyeBufferR.buffer, 2, -(millis()/500)%2 + 1, 0);
-
+  
+  // Print out the mouth and snoot to their respective spots on the output matrix
   matrix.drawSprite(2, mouthBufferL.buffer, 4);
   matrix.drawSprite(6, snootBuffer.buffer, 2);
   matrix.drawSprite(8, mouthBufferR.buffer, 4);
   
+  // Print out just how fast this thing is running (Spoiler: Friggin' fast!)
   long int t = micros();
   matrix.display();
   long int t2 = micros();
