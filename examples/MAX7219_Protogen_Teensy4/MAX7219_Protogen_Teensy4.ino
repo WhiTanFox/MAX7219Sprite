@@ -1,10 +1,17 @@
 
+#define DEMOENABLED (false)
+
 #include <SPI.h>
 
 #include <OctoWS2811.h>
 
 #include "MAX7219Sprite.h"
 #include "SpriteData.h"
+
+
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h>
 
 // Initialize the main display matrix
 // arg0 is the number of 8x8 segments described in the flame buffer.
@@ -22,8 +29,13 @@ splerp::RenderTarget mouthBufferR(4);
 
 splerp::RenderTarget snootBuffer(2);
 
+Adafruit_MPU6050 mpu;
+
 const int numPins = 8;
 byte pinList[numPins] = {2, 3, 4, 5, 17, 16, 21, 20,};
+
+byte pinBoop = 22;
+byte pinButton = 6;
 
 #define CH_Ear1 0
 #define CH_Ear2 1
@@ -117,12 +129,25 @@ void setup() {
   leds.begin();
   debug("WS2812 LED output initialized");
 
-  //FastLED.addLeds<CHIPSET, LED_PIN_CHEEK_0, COLOR_ORDER>(leds_Fins0, NUM_LEDS_FINS);
-  //FastLED.addLeds<CHIPSET, LED_PIN_CHEEK_1, COLOR_ORDER>(leds_Fins1, NUM_LEDS_FINS);
+    // Try to initialize MPU6050.
+  // If that fails, mark down that the IMU isn't usable and move along.
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    IMUavailable = false;
+  }
+
+  if (IMUavailable) {
+    mpu.setAccelerometerRange(MPU6050_RANGE_16_G);
+    mpu.setGyroRange(MPU6050_RANGE_2000_DEG);
+    mpu.setFilterBandwidth(MPU6050_BAND_260_HZ);
+  }
+  
   debug("Setting LEDs");
   setLEDsGlowy();
   debug("LEDs set, moving onto loop");
   
+  pinMode(pinButton, INPUT_PULLUP);
+  pinMode(pinBoop, INPUT);
   
   delay(50);
 }
@@ -176,8 +201,9 @@ void drawInterpolatedEyes(splerp::RenderTarget * target, uint8_t * eventual, uin
 
 int lastBoopState = 0;
 long int startofboop = 0;
+
 void getBoop() {
-  bool in = !digitalRead(A0);
+  bool in = !digitalRead(pinBoop);
   if (in && (!lastBoopState || (millis() - startofboop) < 5000)) {
     if (startofboop < 0) startofboop = millis();
     setNewState(BOOPED);
@@ -186,6 +212,23 @@ void getBoop() {
     startofboop = -5000;
   }
   lastBoopState = in;
+}
+
+bool lastButtonState = 0;
+long int lastButtonTime = 0;
+int buttonMood = SMILING;
+const int MaxButtonFace = (ERROR404);
+
+void getButton() {
+  bool in = !digitalRead(pinButton);
+  if (in) {
+    if (millis() - lastButtonTime > 20 && !lastButtonState) {
+      buttonMood = (buttonMood+1)%(MaxButtonFace + 1);
+      setNewState(buttonMood);
+    }
+    lastButtonTime = millis();
+  }
+  lastButtonState = in;
 }
 
 void loop() {
@@ -206,7 +249,7 @@ void loop() {
 
 
   // Demonstrate things!
-  if (millis() - lastManual > 10000) {
+  if (millis() - lastManual > 10000 && DEMOENABLED) {
     demoMode = true;
     if (millis() - stateUpdateTime > 1000) {
       setNewState((millis() / 1000) % N_Options);
@@ -214,38 +257,63 @@ void loop() {
   }
 
   getBoop();
+  getButton();
   
   long int emoteTimer = millis() - stateUpdateTime;
   
   if (currentState == SMILING) {
     drawSmilingEyes(&eyeFutureL, &eyeFutureR);
+
+    for (int i = 0; i < leds.numPixels()/numPins; ++i) {
+      uint16_t t = millis()/10 + i * 256/ledsPerStrip;
+      leds.setPixel(i+ledsPerStrip*CH_Cheek1, gRGB(0, 60, 60));
+      leds.setPixel(i+ledsPerStrip*CH_Cheek1, gRGB(0, 60, 60));
+    }
   } else if (currentState == HEART_EYES) {
     int t = millis();
-    eyeFutureL.drawOffset(0, heartEye, 2, (t / 50) % 2, 0);
-    eyeFutureR.drawOffset(0, heartEye, 2, 1-(t / 50) % 2, 0);
+    eyeFutureL.drawOffset(0, heartEye, 2, (t / 80) % 2, 0);
+    eyeFutureR.drawOffset(0, heartEye, 2, 1-(t / 80) % 2, 0);
 
-    if (emoteTimer > 1000 && !demoMode) setNewState(SMILING);
-    
+    for (int i = 0; i < leds.numPixels()/numPins; ++i) {
+      uint16_t t = millis()/10 + i * 256/ledsPerStrip;
+      leds.setPixel(i+ledsPerStrip*CH_Cheek1, gRGB(100, 20, 20));
+      leds.setPixel(i+ledsPerStrip*CH_Cheek1, gRGB(100, 20, 20));
+    }
+
+    //if (emoteTimer > 1000 && !demoMode) setNewState(SMILING);
   } else if (currentState == SHOCK) {
     eyeFutureL.drawOffset(0, boringEye, 2, -1, 0);
     eyeFutureR.drawSprite(0, boringEye, 2);
     //Serial.println("Drawing shocked eyes to buffer...");
+
+    for (int i = 0; i < leds.numPixels()/numPins; ++i) {
+      uint16_t t = millis()/10 + i * 256/ledsPerStrip;
+      leds.setPixel(i+ledsPerStrip*CH_Cheek1, gRGB(0, 0, 60));
+      leds.setPixel(i+ledsPerStrip*CH_Cheek1, gRGB(0, 0, 60));
+    }
     
-    if (emoteTimer > 100 && !demoMode) setNewState(SMILING);
-    
+    //if (emoteTimer > 100 && !demoMode) setNewState(SMILING);
   } else if (currentState == ERROR404) {
     eyeFutureL.drawSprite(0, errorCode, 2);
     eyeFutureR.drawSprite(0, errorCode, 2);
     //Serial.println("Drawing ERROR404 to buffer...");
     
-    if (emoteTimer > 1000 && !demoMode) setNewState(SMILING);
+    for (int i = 0; i < leds.numPixels()/numPins; ++i) {
+      uint16_t t = millis()/10 + i * 256/ledsPerStrip;
+      leds.setPixel(i+ledsPerStrip*CH_Cheek1, gRGB(t % 256 / 2, 0, 0));
+      leds.setPixel(i+ledsPerStrip*CH_Cheek1, gRGB(t % 256 / 20, 0, 0));
+    }
+    
+    //if (emoteTimer > 1000 && !demoMode) setNewState(SMILING);
   } else if (currentState == BOOPED) {
     eyeFutureL.drawSprite(0, boopEyeR, 2);
     eyeFutureR.drawSprite(0, boopEyeL, 2);
+    
+    setLEDsGlowy();
 
     int runningTime = millis() - stateChangeTime;
     
-    if (emoteTimer > 100 && !demoMode) setNewState(SMILING);
+    if (emoteTimer > 100 && !demoMode) setNewState(buttonMood);
   }
   
   drawInterpolatedEyes(&eyeBufferL, eyeFutureL.buffer, eyeBufferL_hold.buffer);
@@ -255,9 +323,29 @@ void loop() {
   snootBuffer.drawSprite(0, snoot, 2);
   
 
-  matrix.drawOffset(0, eyeBufferL.buffer, 2, (millis()/500)%2 - 1, 0);
-  matrix.drawOffset(12, eyeBufferR.buffer, 2, -(millis()/500)%2 + 1, 0);
+  int hor = 0;
+  int ver = 0;
+  int delta = 0;
+  if (IMUavailable) {
+    // Need to wait for new data somehow
+    sensors_event_t a, g, temp;
+    // THIS ISN'T THE PROBLEM
+    mpu.getEvent(&a, &g, &temp);
+  
+    // Z is yaw
+    // Y is pitch
+    // X is roll
+  
+    hor = g.gyro.z*1.25;
+    ver = -g.gyro.y*1.25;
+    delta = g.gyro.x*1.25;
+  }
+  
+  //matrix.drawOffset(0, eyeBufferL.buffer, 2, (millis()/500)%2 - 1, 0);
+  //matrix.drawOffset(12, eyeBufferR.buffer, 2, -(millis()/500)%2 + 1, 0);
 
+  matrix.drawOffset(0, eyeBufferL.buffer, 2, hor, ver+delta);
+  matrix.drawOffset(12, eyeBufferR.buffer, 2, hor, ver-delta);
   matrix.drawSprite(2, mouthBufferL.buffer, 4);
   matrix.drawSprite(6, snootBuffer.buffer, 2);
   matrix.drawSprite(8, mouthBufferR.buffer, 4);
@@ -267,8 +355,6 @@ void loop() {
     lastReboot = millis();
     debug("Rebooted matrix");
   }
-
-  setLEDsGlowy();
   leds.show();
 //  long int t = micros();
   delay(5);
