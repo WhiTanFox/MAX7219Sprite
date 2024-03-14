@@ -157,8 +157,12 @@ void setup() {
 #define HEART_EYES 1
 #define SHOCK 2
 #define ERROR404 3
-#define BOOPED 4
-#define N_Options 5
+#define HYPNO 4
+
+#define MAXBUTTONFACE 4
+
+#define BOOPED 5
+#define N_Options 6
 
 // State tracking for things
 long int stateChangeTime = 0;
@@ -217,7 +221,7 @@ void getBoop() {
 bool lastButtonState = 0;
 long int lastButtonTime = 0;
 int buttonMood = SMILING;
-const int MaxButtonFace = (ERROR404);
+const int MaxButtonFace = MAXBUTTONFACE;
 
 void getButton() {
   bool in = !digitalRead(pinButton);
@@ -314,6 +318,15 @@ void loop() {
     int runningTime = millis() - stateChangeTime;
     
     if (emoteTimer > 100 && !demoMode) setNewState(buttonMood);
+  } else if (currentState == HYPNO) {
+    eyeFutureL.drawSprite(0, hypnoEyesAnimation[millis() / 100 % hypnoEyesAnimation_Frames], 2);
+    eyeFutureR.drawSprite(0, hypnoEyesAnimation[millis() / 100 % hypnoEyesAnimation_Frames], 2);
+
+    for (int i = 0; i < leds.numPixels()/numPins; ++i) {
+      uint16_t t = millis()/10 + i * 256/ledsPerStrip;
+      leds.setPixel(i+ledsPerStrip*CH_Cheek1, gRGB(t % 256 / 2, 0, 0));
+      leds.setPixel(i+ledsPerStrip*CH_Cheek1, gRGB(t % 256 / 20, 0, 0));
+    }
   }
   
   drawInterpolatedEyes(&eyeBufferL, eyeFutureL.buffer, eyeBufferL_hold.buffer);
