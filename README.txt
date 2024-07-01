@@ -1,7 +1,7 @@
 MAX7219Sprite.h
 ---------------
 
-Sprite wrangling for MAX7219-based displays.
+Lightweight, high-speed sprite wrangling for MAX7219-based displays.
 
 Version 1.0
 
@@ -11,10 +11,11 @@ By Charles H (@CharlesCAN#4335 on Discord - reach out if you need any help!)
 Hardware:
 ---------
 
-The MAX7219 displays are SPI displays, hook them up accordingly:
+The MAX7219 displays are shift register displays, which are best used with the SPI interface on your microcontroller.
 - DIN to MOSI
 - CLK to CLK
 - CS to a GPIO pin of your choosing, to be specified in the DisplayTarget constructor
+- Consider adding termination resistors to CS and CLK - see note below
 
 For an Arduino Nano, this will be:
 - DIN to pin 11
@@ -23,6 +24,10 @@ For an Arduino Nano, this will be:
 - Vcc to 5V
 - GND to GND
 
+Termination Resistors:
+For long runs of displays, you will want termination resistors on the CS and CLK lines. I've found that roughly 100 ohm is enough to get the job done with a chain of 14 matrix modules off Amazon or AliExpress. Solder one from CS to GND and one from CLK to GND.
+
+You can also reduce the SPI clock rate, but why would you want to do that?
 
 How to use it:
 --------------
@@ -35,25 +40,23 @@ The constructor for matrix takes two parameters:
 
 - Call matrix.setup() in your setup() function
 You'll need to pass in an intensity value for the matrices. This goes from 0x00 to 0x0F, where 0x00 is very dim and 0x0F is very bright.
-This enables the SPI peripheral with appropriate configuration, then sends a few bytes of setup and reset data to each
-MAX7219 to ensure they're going to actually work as we would hope.
+This enables the SPI peripheral with appropriate configuration, then sends a few bytes of setup and reset data to each MAX7219 to ensure they're going to actually work as we would hope.
 
 In your program's main loop:
 - Call whatever render functions you want
 - Once everything of interest has been rendered, call
 matrix.display();
-to send the frame buffer to the displays
+to send the frame buffer to the displays.
 Note that this will overwrite all pixels (since this has a lower computational cost than tracking your changes).
-However, the frame buffer is not cleared after calling display(), so unless you clear it, the replacement data should
-not show any unexpected changes.
+However, the frame buffer is not cleared after calling display(), so unless you clear it, the replacement data should not show any unexpected changes.
 
 
 Hey, the outputs keep going glitchy?
 ------------------------------------
 
-Sometimes, your MAX7219s will do some weird stuff.
+Sometimes, your MAX7219s will do some weird stuff. Power fluctuations and signal noise and voltage spikes are some prominent causes.
 
-Reflow your solder joints, use nicer wire, and inject power from both ends of the array.
+Reflow your solder joints, use nicer wire, inject power from both ends of the array, and terminate your CS and CLK lines at the end of the array with 100ohm or so resistors.
 
 However, if you've done what you readily can and are tearing your hair out, there's one dirty solution:
 Call matrix.reboot() every once in a while - say, twice per second.
@@ -62,15 +65,21 @@ You'll need to feed it your intensity value, but that's probably fine.
 
 Functions:
 ----------
-
+splerp::DisplayTarget(			Construct an object to reference an actual stack of displays.
+	const int N_matrices,		Number of MAX7219s in the series
+	const int CS_Pin		Chip select pin number for local device
+)
 display()	writes out the framebuffer to the display.
-setup(		configures the PSI peripheral and all of the MAX7219s
+setup(		configures the SPI peripheral and all of the MAX7219s
 	uint8_t intensity, 		Display brightness
 )		
 reboot(		Smacks all the settings back into the displays
 	uint8_t intensity, 		Display brightness
 )
 
+splerp::RenderTarget(			Construct a non-outputting display target for compositing.
+	const int N_matrices		Number of 8x8 segments in the display
+)
 drawSprite(			Copy the source sprite to the target location.
 	int index,		render target start position
 	uint8_t * src,	input sprite
@@ -92,18 +101,7 @@ void drawLerp(		Interpolates between two 8x8 sprites
 	int progress		progress from 0 to 8, inclusive
 )
 
-void drawEye(		Renders an eye with an eyelid and pupil. (Don't use this)
-	int index,		render target start position
-	uint8_t * dat,		the eye outline sprite. 16x8
-	uint16_t * pupil,	the special pupil matrix (two 16-bit integers).
-	int x,			current pupil x offset
-	int y,			current pupil y offset
-	uint8_t * blink,	the closed-eye sprite. 16x8
-	int blinkDist		extent, from 0 to 8, of eyelid closure.
-)
-
 drawBlank(			Renders blank (black) pixels.
-	int index,		render target start position in 8x8 blocks
 	int index,		render target start position in 8x8 blocks
 	int count		number of 8x8's of blank to output
 )
@@ -129,6 +127,17 @@ offsetMatrixWrap(	Shift along X and Y the given sprite, but wrap around the edge
 	int count,		number of 8x8 panels included in the sprite
 	int hor,		horizontal offset (towards the 0th matrix)
 	int ver			vertical offset (towards the 0th row)
+)
+
+
+void drawEye(		Renders an eye with an eyelid and pupil. (Don't use this)
+	int index,		render target start position
+	uint8_t * dat,		the eye outline sprite. 16x8
+	uint16_t * pupil,	the special pupil matrix (two 16-bit integers).
+	int x,			current pupil x offset
+	int y,			current pupil y offset
+	uint8_t * blink,	the closed-eye sprite. 16x8
+	int blinkDist		extent, from 0 to 8, of eyelid closure.
 )
 
 
@@ -206,10 +215,8 @@ uint8_t Omega[16] = {
 Framebuffers, sprites, and render targets:
 ------------------------------------------
 
-The data storage is the exact same for framebuffers, sprites, and render targets. To the program, they are interchangable (unless
-one is a const; be careful!).
+The data storage is the exact same for framebuffers, sprites, and render targets. To the program, they are interchangable (unless one is a const; be careful!).
 
-What this means for you is that you can allocate a block of memory of appropriate size and pass it as the target to any rendering
-function, such as an interpolation or animation.
+What this means for you is that you can allocate a block of memory of appropriate size and pass it as the target to any rendering function, such as an interpolation or animation.
 
 The contents of a RenderTarget or DisplayTarget can be passed around via its public .buffer member.
